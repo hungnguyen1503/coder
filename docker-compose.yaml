@@ -1,0 +1,133 @@
+# Docker Compose configuration for Coder development environment
+#
+# Images used in this configuration:
+#
+# 1. traefik:v2.10.7
+#    - Modern reverse proxy and load balancer
+#    - Handles routing of HTTP/HTTPS traffic
+#    - Features:
+#      * Automatic SSL/TLS certification
+#      * Web UI dashboard (port 8080)
+#      * Dynamic configuration
+#      * Docker integration
+#    - Ports: 80 (HTTP), 443 (HTTPS), 8080 (Dashboard)
+#
+# 2. netdata/netdata:v1.44.2
+#    - Real-time performance and health monitoring
+#    - Features:
+#      * System metrics collection
+#      * Resource usage monitoring
+#      * Performance analytics
+#      * Real-time alerts
+#    - Port: 19999 (Web interface)
+#    - Requires: SYS_PTRACE capability, access to host metrics
+#
+# 3. ghcr.io/coder/coder:v2.21.3
+#    - Remote development platform server
+#    - Features:
+#      * Secure remote workspaces
+#      * Development environment management
+#      * Multi-user support
+#      * Cloud integration
+#    - Port: 3000 (Web interface)
+#    - Requires: PostgreSQL database, Docker socket
+#
+# 4. postgres:16.2
+#    - PostgreSQL database for Coder
+#    - Features:
+#      * Persistent data storage
+#      * Automatic health checks
+#      * Secure user authentication
+#    - Used by: Coder server
+#    - Data: Stored in persistent volume
+
+version: "3.9"
+services:
+  # Traefik: Handles HTTP/HTTPS routing and load balancing
+  traefik:
+    image: traefik:v2.10.7  # Modern reverse proxy
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  # Netdata: Real-time performance monitoring
+  netdata:
+    image: netdata/netdata:v1.44.2  # System metrics and monitoring
+    container_name: netdata
+    ports:
+      - "19999:19999"
+    hostname: coder.hungngquang.xzy
+    cap_add:
+      - SYS_PTRACE
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netdata.rule=Host(`netdata.hungngquang.xzy`)"
+      - "traefik.http.routers.netdata.entrypoints=web"
+      - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - ./cloud.conf:/var/lib/netdata/cloud.d/cloud.conf:ro
+    restart: unless-stopped
+
+  # Coder: Remote development platform
+  coder:
+    image: ghcr.io/coder/coder:v2.21.3  # Remote development server
+    container_name: coder
+    ports:
+      - "3000:3000"
+    environment:
+      CODER_PG_CONNECTION_URL: "postgresql://${POSTGRES_USER:-username}:${POSTGRES_PASSWORD:-password}@coder_database/${POSTGRES_DB:-coder}?sslmode=disable"
+      CODER_ACCESS_URL: "https://coder.hungngquang.xyz"
+      CODER_HTTP_ADDRESS: "0.0.0.0:3000"
+      CODER_TLS_ENABLE: "false"
+      CODER_PROXY_TRUSTED_ORIGINS: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+    restart: unless-stopped
+    depends_on:
+      coder_database:
+        condition: service_healthy
+
+  # PostgreSQL: Database for Coder
+  coder_database:
+    image: "postgres:16.2"  # Latest stable PostgreSQL
+    container_name: coder-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-username}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-coder}
+    volumes:
+      - coder_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-username} -d ${POSTGRES_DB:-coder}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+# Persistent storage volumes
+volumes:
+  coder_data:        # Stores PostgreSQL database files
+  netdataconfig:     # Stores Netdata configuration
+  netdatalib:        # Stores Netdata database
+  netdatacache:      # Stores Netdata cache
