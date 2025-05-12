@@ -3,7 +3,7 @@ This repository contains configuration files and documentation for setting up a 
 
 ## 🔧 Components
 
-### 1. Traefik (v2.10.7) 🌐
+### 1. Traefik 🌐
 - Modern reverse proxy and load balancer
 - Handles HTTP/HTTPS routing
 - Features:
@@ -13,7 +13,7 @@ This repository contains configuration files and documentation for setting up a 
   * Docker integration
 - Ports: 80 (HTTP), 443 (HTTPS), 8080 (Dashboard)
 
-### 2. Netdata (v1.44.2) 📊
+### 2. Netdata 📊
 - Real-time performance and health monitoring
 - Features:
   * System metrics collection
@@ -22,7 +22,7 @@ This repository contains configuration files and documentation for setting up a 
   * Real-time alerts
 - Port: 19999 (Web interface)
 
-### 3. Coder Server (v2.21.3) 💻
+### 3. Coder Server 💻
 - Remote development platform
 - Features:
   * Secure remote workspaces
@@ -31,7 +31,7 @@ This repository contains configuration files and documentation for setting up a 
   * Cloud integration
 - Port: 3000 (Web interface)
 
-### 4. PostgreSQL (16.2) 🗄️
+### 4. PostgreSQL 🗄️
 - Database backend for Coder
 - Features:
   * Persistent data storage
@@ -74,3 +74,15 @@ The main configuration is defined in `docker-compose.yaml`. Key configurations i
 - 💾 Regular backups of PostgreSQL data recommended
 - 📈 Monitor system resources using Netdata
 - 🔒 Keep images updated for security patches
+
+## 📦 Version Management
+Service versions are managed in the `docker-compose.yaml` file:
+- Traefik: v2.10.7
+- Netdata: v1.44.2
+- Coder: v2.21.3
+- PostgreSQL: 16.2
+
+To update versions:
+1. Edit the image tags in `docker-compose.yaml`
+2. Run `docker-compose pull` to fetch new images
+3. Run `docker-compose up -d` to apply changes
