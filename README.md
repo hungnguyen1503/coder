@@ -85,11 +85,35 @@ This repository contains configuration files and documentation for setting up a 
 5. 🔒 To make services accessible from the internet:
 
    Option 1: Cloudflare Tunnel (Recommended)
-   - Install cloudflared: `brew install cloudflared` (macOS) or download from Cloudflare website
-   - Login to Cloudflare: `cloudflared tunnel login`
-   - Create a tunnel: `cloudflared tunnel create coder-tunnel`
-   - Configure DNS for your domain in Cloudflare dashboard
-   - Run tunnel: `cloudflared tunnel run --url http://localhost:3000 coder-tunnel`
+   
+   1. Download and install cloudflared:
+   ```bash
+   # Download the latest .deb package
+   curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+
+   # Install the package
+   sudo dpkg -i cloudflared.deb
+   ```
+
+   2. Login to Cloudflare:
+   ```bash
+   cloudflared tunnel login
+   ```
+
+   3. Create a tunnel:
+   ```bash
+   cloudflared tunnel create coder-tunnel
+   ```
+
+   4. Configure DNS for your domain in Cloudflare dashboard
+   - Go to https://dash.cloudflare.com
+   - Select your domain
+   - Add DNS record pointing to your tunnel
+
+   5. Run the tunnel:
+   ```bash
+   cloudflared tunnel run --url http://localhost:3000 coder-tunnel
+   ```
 
    Option 2: Alternative Methods
    - Use Nginx as reverse proxy
