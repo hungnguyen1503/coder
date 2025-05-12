@@ -77,10 +77,10 @@ The main configuration is defined in `docker-compose.yaml`. Key configurations i
 
 ## 📦 Version Management
 Service versions are managed in the `docker-compose.yaml` file:
-- Traefik: v2.10.7
-- Netdata: v1.44.2
-- Coder: v2.21.3
-- PostgreSQL: 16.2
+- Traefik: **v2.10.7**
+- Netdata: **v1.44.2** 
+- Coder: **v2.21.3**
+- PostgreSQL: **16.2**
 
 To update versions:
 1. Edit the image tags in `docker-compose.yaml`
