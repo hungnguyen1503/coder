@@ -97,6 +97,7 @@ services:
     environment:
       CODER_PG_CONNECTION_URL: "postgresql://${POSTGRES_USER:-username}:${POSTGRES_PASSWORD:-password}@coder_database/${POSTGRES_DB:-coder}?sslmode=disable"
       CODER_ACCESS_URL: "https://coder.hungngquang.xyz"
+      CODER_WILDCARD_ACCESS_URL: "*.hungngquang.xyz"
       CODER_HTTP_ADDRESS: "0.0.0.0:3000"
       CODER_TLS_ENABLE: "false"
       # DERP Configuration
@@ -114,8 +115,7 @@ services:
       - /etc/ssl/certs:/etc/ssl/certs:ro
     # Add Docker group permissions
     group_add:
-      - "${DOCKER_GID:-999}"  # Docker group ID
-    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-999}"  # Use host user/group IDs
+      - "137"
     restart: unless-stopped
     depends_on:
       coder_database:
