@@ -106,6 +106,7 @@ services:
       CODER_PROMETHEUS_ADDRESS: "0.0.0.0:2112"
       CODER_EXPERIMENTS: "auto-fill-parameters"
       # DERP Configuration
+      CODER_DERP_CONFIG_URL: "https://controlplane.tailscale.com/derpmap/default"
       # CODER_DERP_SERVER_ENABLE: "false"
       # CODER_DERP_SERVER_STUN_ADDRESSES: "stun.l.google.com:19302"
       # CODER_DERP_SERVER_RELAY_URL: "https://coder.hungngquang.xyz"
