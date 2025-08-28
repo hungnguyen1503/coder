@@ -88,16 +88,47 @@ This repository contains configuration files and documentation for setting up a 
    CLOUDFLARE_TUNNEL_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx
    ```
 
-4. 🏃 Start all services:
+4. 📁 Prepare data storage (btrfs mount):
+   ```bash
+   # Create directory structure on your btrfs mount
+   sudo mkdir -p /data/coder/{postgresql,netdata/{config,lib,cache},workspaces}
+   
+   # Set proper ownership for containers
+   sudo chown -R 1000:1000 /data/coder/netdata
+   sudo chown -R 999:999 /data/coder/postgresql
+   
+   # Create netdata cloud config placeholder
+   echo "# Netdata Cloud configuration" | sudo tee /data/coder/netdata/cloud.conf
+   sudo chown hungnguyen:hungnguyen /data/coder/netdata/cloud.conf
+   ```
+
+5. 🏃 Start all services:
    ```bash
    # Start all containers in detached mode (and remove orphans)
    docker compose up -d --remove-orphans
    ```
 
-5. 🌐 Access the services:
+6. 🌐 Access the services:
    - 💻 Coder: https://coder.hungngquang.xyz (via Cloudflare Tunnel) or http://localhost:3000
    - 📊 Netdata: http://localhost:19999 (optional external exposure via Cloudflare if configured)
    - 📈 Coder Prometheus Metrics: http://localhost:2112
+
+## 📁 Data Storage Structure
+
+All persistent data is stored on the btrfs mount at `/data/coder/`:
+
+```
+/data/coder/
+├── postgresql/          # PostgreSQL database files
+├── netdata/
+│   ├── config/          # Netdata configuration
+│   ├── lib/             # Netdata database
+│   ├── cache/           # Netdata cache
+│   └── cloud.conf       # Netdata cloud configuration
+└── workspaces/          # Coder workspace data (if needed)
+```
+
+This structure ensures all data is stored on your btrfs filesystem for better performance and data integrity.
 
 ## 🔒 Domain & Cloudflare Configuration
 
@@ -134,7 +165,7 @@ The main configuration uses these environment variables:
 ## 🛠️ Maintenance
 
 ### Regular Tasks
-- 💾 Regular backups of PostgreSQL data (stored in `coder_data` volume)
+- 💾 Regular backups of PostgreSQL data (stored in `/data/coder/postgresql`)
 - 📈 Monitor system resources using Netdata
 - 🔒 Keep images updated for security patches
 - 🔄 Restart services:

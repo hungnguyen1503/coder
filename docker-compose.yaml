@@ -11,15 +11,15 @@ services:
     security_opt:
       - apparmor:unconfined
     volumes:
-      - netdataconfig:/etc/netdata
-      - netdatalib:/var/lib/netdata
-      - netdatacache:/var/cache/netdata
+      - /data/coder/netdata/config:/etc/netdata
+      - /data/coder/netdata/lib:/var/lib/netdata
+      - /data/coder/netdata/cache:/var/cache/netdata
       - /etc/passwd:/host/etc/passwd:ro
       - /etc/group:/host/etc/group:ro
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /etc/os-release:/host/etc/os-release:ro
-      - ./cloud.conf:/var/lib/netdata/cloud.d/cloud.conf:ro
+      - /data/coder/netdata/cloud.conf:/var/lib/netdata/cloud.d/cloud.conf:ro
     restart: unless-stopped
 
   # Coder: Remote development platform
@@ -70,7 +70,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-coder}
     volumes:
-      - coder_data:/var/lib/postgresql/data
+      - /data/coder/postgresql:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-username} -d ${POSTGRES_DB:-coder}"]
       interval: 5s
@@ -78,9 +78,12 @@ services:
       retries: 5
     restart: unless-stopped
 
-# Persistent storage volumes
-volumes:
-  coder_data:        # Stores PostgreSQL database files
-  netdataconfig:     # Stores Netdata configuration
-  netdatalib:        # Stores Netdata database
-  netdatacache:      # Stores Netdata cache
+# Data directory structure on /data/coder:
+# /data/coder/
+# ├── postgresql/     # PostgreSQL database files
+# ├── netdata/
+# │   ├── config/     # Netdata configuration
+# │   ├── lib/        # Netdata database
+# │   ├── cache/      # Netdata cache
+# │   └── cloud.conf  # Netdata cloud configuration
+# └── workspaces/     # Coder workspace data (if needed)
