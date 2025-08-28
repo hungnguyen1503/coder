@@ -1,65 +1,4 @@
-# Docker Compose configuration for Coder development environment
-#
-# Images used in this configuration:
-#
-# 1. traefik:v2.10.7
-#    - Modern reverse proxy and load balancer
-#    - Handles routing of HTTP/HTTPS traffic
-#    - Features:
-#      * Automatic SSL/TLS certification
-#      * Web UI dashboard (port 8080)
-#      * Dynamic configuration
-#      * Docker integration
-#    - Ports: 80 (HTTP), 443 (HTTPS), 8080 (Dashboard)
-#
-# 2. netdata/netdata:v1.44.2
-#    - Real-time performance and health monitoring
-#    - Features:
-#      * System metrics collection
-#      * Resource usage monitoring
-#      * Performance analytics
-#      * Real-time alerts
-#    - Port: 19999 (Web interface)
-#    - Requires: SYS_PTRACE capability, access to host metrics
-#
-# 3. ghcr.io/coder/coder:v2.21.3
-#    - Remote development platform server
-#    - Features:
-#      * Secure remote workspaces
-#      * Development environment management
-#      * Multi-user support
-#      * Cloud integration
-#    - Port: 3000 (Web interface)
-#    - Requires: PostgreSQL database, Docker socket
-#
-# 4. postgres:16.2
-#    - PostgreSQL database for Coder
-#    - Features:
-#      * Persistent data storage
-#      * Automatic health checks
-#      * Secure user authentication
-#    - Used by: Coder server
-#    - Data: Stored in persistent volume
-
-version: "3.9"
 services:
-  # Traefik: Handles HTTP/HTTPS routing and load balancing
-  traefik:
-    image: traefik:v2.10.7  # Modern reverse proxy
-    container_name: traefik
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-      - "8080:8080"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
-
   # Netdata: Real-time performance monitoring
   netdata:
     image: netdata/netdata:v1.44.2  # System metrics and monitoring
@@ -69,11 +8,6 @@ services:
     hostname: coder.hungngquang.xzy
     cap_add:
       - SYS_PTRACE
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.netdata.rule=Host(`netdata.hungngquang.xzy`)"
-      - "traefik.http.routers.netdata.entrypoints=web"
-      - "traefik.http.services.netdata.loadbalancer.server.port=19999"
     security_opt:
       - apparmor:unconfined
     volumes:
@@ -104,28 +38,28 @@ services:
       CODER_DANGEROUS_ALLOW_PATH_APP_SHARING: "true"
       CODER_PROMETHEUS_ENABLE: "true"
       CODER_PROMETHEUS_ADDRESS: "0.0.0.0:2112"
-      CODER_EXPERIMENTS: "auto-fill-parameters"
-      # DERP Configuration
-      CODER_DERP_CONFIG_URL: "https://controlplane.tailscale.com/derpmap/default"
-      # CODER_DERP_SERVER_ENABLE: "false"
-      # CODER_DERP_SERVER_STUN_ADDRESSES: "stun.l.google.com:19302"
-      # CODER_DERP_SERVER_RELAY_URL: "https://coder.hungngquang.xyz"
-      # CODER_DERP_SERVER_REGION_NAME: "hungngquang-region"
-      # CODER_DERP_CONFIG_URL: ""
-      # Proxy and Websocket settings
-      # CODER_PROXY_TRUSTED_HEADERS: "CF-Connecting-IP,CF-IPCountry,CF-RAY,X-Forwarded-For,X-Forwarded-Proto,X-Real-IP"
-      # CODER_PROXY_TRUSTED_ORIGINS: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
-      # CODER_WEBSOCKET_ACCESS_PREFIX: "wss://coder.hungngquang.xyz"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/ssl/certs:/etc/ssl/certs:ro
     # Add Docker group permissions
     group_add:
-      - "137"
+      - ${DOCKER_GROUP_ID}
     restart: unless-stopped
     depends_on:
       coder_database:
         condition: service_healthy
+
+  # Cloudflare Tunnel: Securely expose local services to the internet
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    network_mode: "service:coder"
+    restart: unless-stopped
+    depends_on:
+      - coder
 
   # PostgreSQL: Database for Coder
   coder_database:

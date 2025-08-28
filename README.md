@@ -3,15 +3,11 @@ This repository contains configuration files and documentation for setting up a 
 
 ## 🔧 Components
 
-### 1. Traefik 🌐
-- Modern reverse proxy and load balancer
-- Handles HTTP/HTTPS routing
-- Features:
-  * Automatic SSL/TLS certification
-  * Web UI dashboard (port 8080)
-  * Dynamic configuration
-  * Docker integration
-- Ports: 80 (HTTP), 443 (HTTPS), 8080 (Dashboard)
+### 1. Cloudflare Tunnel ☁️🛡️
+- Securely exposes local services to the internet via Cloudflare
+- Token-managed configuration (no local certs required)
+- Replaces Traefik in this setup
+- Domain routing managed in Cloudflare dashboard (e.g., `coder.hungngquang.xyz`)
 
 ### 2. Netdata 📊
 - Real-time performance and health monitoring
@@ -67,9 +63,8 @@ This repository contains configuration files and documentation for setting up a 
    # Install Docker
    sudo apt install -y docker-ce docker-ce-cli containerd.io
 
-   # Install Docker Compose
-   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-   sudo chmod +x /usr/local/bin/docker-compose
+   # Install Docker Compose plugin (preferred)
+   sudo apt install -y docker-compose-plugin
 
    # Add your user to docker group (optional)
    sudo usermod -aG docker $USER
@@ -81,47 +76,40 @@ This repository contains configuration files and documentation for setting up a 
    cd coder
    ```
 
-3. 🔧 Configure environment variables (optional):
+3. 🔧 Configure environment variables:
    Create a `.env` file in the project root:
    ```bash
    POSTGRES_USER=your_username
    POSTGRES_PASSWORD=your_secure_password
    POSTGRES_DB=coder
+   # Docker group ID on host (e.g., from `getent group docker`)
+   DOCKER_GROUP_ID=988
+   # Cloudflare token for your tunnel (from Cloudflare dashboard)
+   CLOUDFLARE_TUNNEL_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx
    ```
 
 4. 🏃 Start all services:
    ```bash
-   # Start all containers in detached mode
-   docker-compose up -d
+   # Start all containers in detached mode (and remove orphans)
+   docker compose up -d --remove-orphans
    ```
 
 5. 🌐 Access the services:
-   - Coder: http://localhost:3000 or https://coder.hungngquang.xyz
-   - Traefik Dashboard: http://localhost:8080
-   - Netdata Monitoring: http://localhost:19999 or https://netdata.hungngquang.xyz
-   - Coder Prometheus Metrics: http://localhost:2112
+   - 💻 Coder: https://coder.hungngquang.xyz (via Cloudflare Tunnel) or http://localhost:3000
+   - 📊 Netdata: http://localhost:19999 (optional external exposure via Cloudflare if configured)
+   - 📈 Coder Prometheus Metrics: http://localhost:2112
 
-## 🔒 Domain Configuration
+## 🔒 Domain & Cloudflare Configuration
 
-This setup is configured for the domain `hungngquang.xyz` with the following subdomains:
-- `coder.hungngquang.xyz` - Coder development platform
-- `netdata.hungngquang.xyz` - System monitoring dashboard
+This setup uses a Cloudflare Tunnel token. Configure routing in the Cloudflare dashboard to map your hostname(s) to the tunnel:
+- `coder.hungngquang.xyz` → Service `http://localhost:3000` (inside tunnel)
+- Optionally add `netdata.hungngquang.xyz` → Service `http://localhost:19999`
 
 ### DNS Configuration
-Ensure your DNS records point to your server:
-- `coder.hungngquang.xyz` → Your server IP
-- `netdata.hungngquang.xyz` → Your server IP
+When using a token-managed tunnel, DNS is handled by Cloudflare automatically. You do not need to expose your server IP publicly; Cloudflare creates the necessary records.
 
 ### SSL/TLS Setup
-The current configuration has TLS disabled for local development. For production:
-
-1. Enable TLS in the Coder environment variables:
-   ```yaml
-   CODER_TLS_ENABLE: "true"
-   CODER_TLS_REDIRECT_HTTP: "true"
-   ```
-
-2. Configure SSL certificates through Traefik or your preferred method.
+TLS is terminated at Cloudflare when using Cloudflare Tunnel. Keep `CODER_TLS_ENABLE` disabled in the container.
 
 ## ⚙️ Configuration
 
@@ -130,10 +118,11 @@ The main configuration uses these environment variables:
 - `POSTGRES_USER` - Database username (default: username)
 - `POSTGRES_PASSWORD` - Database password (default: password)
 - `POSTGRES_DB` - Database name (default: coder)
+ - `DOCKER_GROUP_ID` - Host Docker group id for socket access
+ - `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare tunnel token
 
 ### Coder Features Enabled
 - Prometheus metrics on port 2112
-- Auto-fill parameters experiment
 - Path app sharing (for development)
 - Docker socket access for workspace management
 
@@ -148,7 +137,10 @@ The main configuration uses these environment variables:
 - 💾 Regular backups of PostgreSQL data (stored in `coder_data` volume)
 - 📈 Monitor system resources using Netdata
 - 🔒 Keep images updated for security patches
-- 🔄 Restart services: `docker-compose restart`
+- 🔄 Restart services:
+  ```bash
+  docker compose restart
+  ```
 
 ### Backup Database
 ```bash
@@ -162,46 +154,61 @@ docker exec -i coder-db psql -U username coder < backup_file.sql
 ### Update Services
 ```bash
 # Pull latest images
-docker-compose pull
+docker compose pull
 
 # Update and restart services
-docker-compose up -d
+docker compose up -d --remove-orphans
 ```
 
 ## 📦 Version Management
 Service versions are managed in the `docker-compose.yaml` file:
-- Traefik: **v2.10.7**
 - Netdata: **v1.44.2** 
-- Coder: **v2.25.1** ⚠️ Updated from v2.21.3
+- Coder: **v2.25.1**
 - PostgreSQL: **16.2**
 
 To update versions:
 1. Edit the image tags in `docker-compose.yaml`
-2. Run `docker-compose pull` to fetch new images
-3. Run `docker-compose up -d` to apply changes
+2. Fetch new images:
+   ```bash
+   docker compose pull
+   ```
+3. Apply changes:
+   ```bash
+   docker compose up -d --remove-orphans
+   ```
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
-1. **Port conflicts**: Ensure ports 80, 443, 3000, 8080, 19999 are available
-2. **Database connection**: Check PostgreSQL health with `docker-compose logs coder_database`
-3. **Permission issues**: Ensure Docker socket access: `sudo chmod 666 /var/run/docker.sock`
+1. **Port conflicts**: Ensure ports 3000, 19999 are available locally
+2. **Database connection**: Check PostgreSQL health
+   ```bash
+   docker compose logs coder_database
+   ```
+3. **Permission issues**: Ensure Docker socket access
+   ```bash
+   sudo chmod 666 /var/run/docker.sock
+   ```
+4. **Cloudflare Tunnel cannot reach origin**: Ensure tunnel shares network with `coder`
+   ```bash
+   docker compose logs cloudflared
+   ```
 
 ### Logs
 ```bash
 # View all logs
-docker-compose logs
+docker compose logs
 
 # View specific service logs
-docker-compose logs coder
-docker-compose logs netdata
-docker-compose logs traefik
+docker compose logs coder
+docker compose logs netdata
+docker compose logs cloudflared
 ```
 
 ### Health Checks
 ```bash
 # Check service status
-docker-compose ps
+docker compose ps
 
 # Check database health
 docker exec coder-db pg_isready -U username -d coder
