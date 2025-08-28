@@ -31,7 +31,7 @@ services:
     environment:
       CODER_PG_CONNECTION_URL: "postgresql://${POSTGRES_USER:-username}:${POSTGRES_PASSWORD:-password}@coder_database/${POSTGRES_DB:-coder}?sslmode=disable"
       CODER_ACCESS_URL: "https://coder.hungngquang.xyz"
-      CODER_WILDCARD_ACCESS_URL: "*.hungngquang.xyz"
+      CODER_WILDCARD_ACCESS_URL: "*coder.hungngquang.xyz"
       CODER_HTTP_ADDRESS: "0.0.0.0:3000"
       CODER_TLS_ENABLE: "false"
       CODER_TLS_REDIRECT_HTTP: "false"
