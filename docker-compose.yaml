@@ -20,7 +20,7 @@ services:
       - /sys:/host/sys:ro
       - /etc/os-release:/host/etc/os-release:ro
       - /data/coder/netdata/cloud.conf:/var/lib/netdata/cloud.d/cloud.conf:ro
-    restart: unless-stopped
+    restart: always
 
   # Coder: Remote development platform
   coder:
@@ -44,7 +44,7 @@ services:
     # Add Docker group permissions
     group_add:
       - ${DOCKER_GROUP_ID}
-    restart: unless-stopped
+    restart: always
     depends_on:
       coder_database:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
     network_mode: "service:coder"
-    restart: unless-stopped
+    restart: always
     depends_on:
       - coder
 
@@ -76,7 +76,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: always
 
 # Data directory structure on /data/coder:
 # /data/coder/

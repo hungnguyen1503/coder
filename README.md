@@ -113,6 +113,20 @@ This repository contains configuration files and documentation for setting up a 
    - 📊 Netdata: http://localhost:19999 (optional external exposure via Cloudflare if configured)
    - 📈 Coder Prometheus Metrics: http://localhost:2112
 
+7. 🔄 **Auto-start on Boot (Optional)**: 
+   ```bash
+   # Create systemd service for auto-start
+   sudo cp coder.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable coder.service
+   
+   # Start the service
+   sudo systemctl start coder.service
+   
+   # Check status
+   sudo systemctl status coder.service
+   ```
+
 ## 📁 Data Storage Structure
 
 All persistent data is stored on the btrfs mount at `/data/coder/`:
@@ -157,6 +171,9 @@ The main configuration uses these environment variables:
 - Path app sharing (for development)
 - Docker socket access for workspace management
 
+### Restart Policy
+All services are configured with `restart: always` to ensure they automatically restart if they crash or if the system reboots. This works in conjunction with the systemd service for reliable auto-start behavior.
+
 ### Netdata Configuration
 - Host metrics collection enabled
 - Cloud integration support
@@ -189,6 +206,24 @@ docker compose pull
 
 # Update and restart services
 docker compose up -d --remove-orphans
+```
+
+### Systemd Service Management
+If you've set up the systemd service for auto-start:
+
+```bash
+# Check service status
+sudo systemctl status coder.service
+
+# Start/stop the service
+sudo systemctl start coder.service
+sudo systemctl stop coder.service
+
+# Restart the service
+sudo systemctl restart coder.service
+
+# View service logs
+sudo journalctl -u coder.service -f
 ```
 
 ## 📦 Version Management
