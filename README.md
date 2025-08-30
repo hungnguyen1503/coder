@@ -1,215 +1,226 @@
-# 🚀 Overview
-This repository contains configuration files and documentation for setting up a Coder development environment server using Docker Compose.
+# 🚀 Coder - Remote Development Platform
 
-## 🔧 Components
+[![Coder](https://img.shields.io/badge/Coder-00ADEF?style=for-the-badge&logo=coder&logoColor=white)](https://coder.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://cloudflare.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-### 1. Cloudflare Tunnel ☁️🛡️
-- Securely exposes local services to the internet via Cloudflare
-- Token-managed configuration (no local certs required)
-- Replaces Traefik in this setup
-- Domain routing managed in Cloudflare dashboard (e.g., `coder.hungngquang.xyz`)
+## 📋 Overview
 
-### 2. Netdata 📊
-- Real-time performance and health monitoring
-- Features:
-  * System metrics collection
-  * Resource usage monitoring
-  * Performance analytics
-  * Real-time alerts
-  * Cloud integration support
-- Port: 19999 (Web interface)
-- Domain: netdata.hungngquang.xyz
+Coder is a powerful remote development platform that enables secure, cloud-based development environments. This repository provides a complete Docker-based setup for Coder with PostgreSQL, Netdata monitoring, and Cloudflare Tunnel integration for secure remote access.
 
-### 3. Coder Server 💻
-- Remote development platform
-- Features:
-  * Secure remote workspaces
-  * Development environment management
-  * Multi-user support
-  * Cloud integration
-  * Prometheus metrics enabled
-  * Auto-fill parameters experiment
-- Port: 3000 (Web interface)
-- Domain: coder.hungngquang.xyz
-- Prometheus metrics: 2112
+## 🛠️ Features
 
-### 4. PostgreSQL 🗄️
-- Database backend for Coder
-- Features:
-  * Persistent data storage
-  * Automatic health checks
-  * Secure user authentication
-- Version: 16.2
+- 💻 **Remote Development Workspaces** with full IDE capabilities
+- 🔒 **Secure Access** via Cloudflare Tunnel with no exposed ports
+- 🗄️ **PostgreSQL Database** for persistent data storage
+- 📊 **Real-time Monitoring** with Netdata performance analytics
+- 🐳 **Docker-based Deployment** for easy setup and management
+- 🌐 **Cloudflare Tunnel Integration** for secure remote access
+- 🔐 **Self-hosted Option** with full control over your data
+- 📱 **Responsive Interface** for desktop and mobile devices
+- 🚀 **High Performance** with optimized container configurations
+- 🔧 **Automated Systemd Service** for auto-start on boot
 
-## 🚦 Getting Started
+## 🚀 Quick Start
 
-1. 📥 Install Docker and Docker Compose:
+### Automated Installation
+
+This repository includes a comprehensive installation script that supports multiple Linux distributions:
+
+```bash
+# Download and run the installation script
+curl -sSL https://raw.githubusercontent.com/hungnguyen1503/coder/main/install_coder.sh | bash
+```
+
+The script will automatically:
+- ✅ Detect your operating system and architecture
+- ✅ Update system packages
+- ✅ Install Docker and Docker Compose if not present
+- ✅ Create necessary directories with proper permissions
+- ✅ Download and configure the docker-compose file
+- ✅ Start Coder and supporting services
+- ✅ Handle existing installations gracefully
+
+### Manual Installation
+
+If you prefer manual installation:
+
+1. **Clone the repository:**
    ```bash
-   # Update package list
-   sudo apt update
-
-   # Install prerequisites
-   sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-
-   # Add Docker's official GPG key
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-   # Add Docker repository
-   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-   # Update package list again
-   sudo apt update
-
-   # Install Docker
-   sudo apt install -y docker-ce docker-ce-cli containerd.io
-
-   # Install Docker Compose plugin (preferred)
-   sudo apt install -y docker-compose-plugin
-
-   # Add your user to docker group (optional)
-   sudo usermod -aG docker $USER
-   ```
-
-2. 📋 Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/coder.git
+   git clone https://github.com/hungnguyen1503/coder.git
    cd coder
    ```
 
-3. 🔧 Configure environment variables:
-   Create a `.env` file in the project root:
+2. **Create environment file:**
    ```bash
-   POSTGRES_USER=your_username
-   POSTGRES_PASSWORD=your_secure_password
-   POSTGRES_DB=coder
-   # Docker group ID on host (e.g., from `getent group docker`)
-   DOCKER_GROUP_ID=988
-   # Cloudflare token for your tunnel (from Cloudflare dashboard)
-   CLOUDFLARE_TUNNEL_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx
+   cp .env.example .env
+   # Edit .env with your configuration
+   nano .env  # or use your preferred editor
    ```
 
-4. 📁 Prepare data storage (btrfs mount):
+3. **Start the services:**
    ```bash
-   # Create directory structure on your btrfs mount
-   sudo mkdir -p /data/coder/{postgresql,netdata/{config,lib,cache},workspaces}
-   
-   # Set proper ownership for containers
-   sudo chown -R 1000:1000 /data/coder/netdata
-   sudo chown -R 999:999 /data/coder/postgresql
-   
-   # Create netdata cloud config placeholder
-   echo "# Netdata Cloud configuration" | sudo tee /data/coder/netdata/cloud.conf
-   sudo chown hungnguyen:hungnguyen /data/coder/netdata/cloud.conf
+   docker-compose up -d
    ```
 
-5. 🏃 Start all services:
+## 🔧 Configuration
+
+### Environment Setup
+
+1. **Copy the environment template:**
    ```bash
-   # Start all containers in detached mode (and remove orphans)
-   docker compose up -d --remove-orphans
+   cp .env.example .env
    ```
 
-6. 🌐 Access the services:
-   - 💻 Coder: https://coder.hungngquang.xyz (via Cloudflare Tunnel) or http://localhost:3000
-   - 📊 Netdata: http://localhost:19999 (optional external exposure via Cloudflare if configured)
-   - 📈 Coder Prometheus Metrics: http://localhost:2112
-
-7. 🔄 **Auto-start on Boot (Optional)**: 
+2. **Edit the `.env` file with your actual values:**
    ```bash
-   # Create systemd service for auto-start
-   sudo cp coder.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable coder.service
-   
-   # Start the service
-   sudo systemctl start coder.service
-   
-   # Check status
-   sudo systemctl status coder.service
+   nano .env  # or use your preferred editor
    ```
 
-## 📁 Data Storage Structure
-
-All persistent data is stored on the btrfs mount at `/data/coder/`:
-
-```
-/data/coder/
-├── postgresql/          # PostgreSQL database files
-├── netdata/
-│   ├── config/          # Netdata configuration
-│   ├── lib/             # Netdata database
-│   ├── cache/           # Netdata cache
-│   └── cloud.conf       # Netdata cloud configuration
-└── workspaces/          # Coder workspace data (if needed)
-```
-
-This structure ensures all data is stored on your btrfs filesystem for better performance and data integrity.
-
-## 🔒 Domain & Cloudflare Configuration
-
-This setup uses a Cloudflare Tunnel token. Configure routing in the Cloudflare dashboard to map your hostname(s) to the tunnel:
-- `coder.hungngquang.xyz` → Service `http://localhost:3000` (inside tunnel)
-- Optionally add `netdata.hungngquang.xyz` → Service `http://localhost:19999`
-
-### DNS Configuration
-When using a token-managed tunnel, DNS is handled by Cloudflare automatically. You do not need to expose your server IP publicly; Cloudflare creates the necessary records.
-
-### SSL/TLS Setup
-TLS is terminated at Cloudflare when using Cloudflare Tunnel. Keep `CODER_TLS_ENABLE` disabled in the container.
-
-## ⚙️ Configuration
+3. **Required variables to configure:**
+   - `CLOUDFLARE_TUNNEL_TOKEN`: Get from [Cloudflare Dashboard](https://dash.cloudflare.com/cloudflare-one/tunnels)
+   - `POSTGRES_USER`: Database username
+   - `POSTGRES_PASSWORD`: Database password
+   - `POSTGRES_DB`: Database name
+   - `DOCKER_GROUP_ID`: Host Docker group ID for socket access
 
 ### Environment Variables
-The main configuration uses these environment variables:
-- `POSTGRES_USER` - Database username (default: username)
-- `POSTGRES_PASSWORD` - Database password (default: password)
-- `POSTGRES_DB` - Database name (default: coder)
- - `DOCKER_GROUP_ID` - Host Docker group id for socket access
- - `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare tunnel token
 
-### Coder Features Enabled
-- Prometheus metrics on port 2112
-- Path app sharing (for development)
-- Docker socket access for workspace management
+Create a `.env` file in the project root with the following variables:
 
-### Restart Policy
-All services are configured with `restart: always` to ensure they automatically restart if they crash or if the system reboots. This works in conjunction with the systemd service for reliable auto-start behavior.
+> **⚠️ Security Note:** Never commit your actual `.env` file to version control. Use `.env.example` as a template and keep your real credentials secure.
 
-### Netdata Configuration
-- Host metrics collection enabled
-- Cloud integration support
-- Persistent configuration storage
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token for remote access | - | Yes |
+| `POSTGRES_USER` | PostgreSQL database username | username | No |
+| `POSTGRES_PASSWORD` | PostgreSQL database password | password | No |
+| `POSTGRES_DB` | PostgreSQL database name | coder | No |
+| `DOCKER_GROUP_ID` | Host Docker group ID for socket access | - | Yes |
 
-## 🛠️ Maintenance
+### Docker Compose Services
 
-### Regular Tasks
-- 💾 Regular backups of PostgreSQL data (stored in `/data/coder/postgresql`)
-- 📈 Monitor system resources using Netdata
-- 🔒 Keep images updated for security patches
-- 🔄 Restart services:
-  ```bash
-  docker compose restart
-  ```
+The setup includes four main services:
 
-### Backup Database
+#### Coder Service (`coder`)
+- **Image:** `ghcr.io/coder/coder:v2.25.1`
+- **Port:** `3000:3000`
+- **Volume:** Docker socket access for workspace management
+- **Features:**
+  - Remote development workspaces
+  - Prometheus metrics on port 2112
+  - Path app sharing for development
+  - Docker socket access for workspace management
+
+#### PostgreSQL Database (`coder_database`)
+- **Image:** `postgres:16.2`
+- **Volume:** `/data/coder/postgresql:/var/lib/postgresql/data`
+- **Features:**
+  - Persistent data storage
+  - Automatic health checks
+  - Secure user authentication
+
+#### Netdata Monitoring (`netdata`)
+- **Image:** `netdata/netdata:v1.44.2`
+- **Port:** `19999:19999`
+- **Volume:** `/data/coder/netdata:/etc/netdata`
+- **Features:**
+  - Real-time system metrics
+  - Performance analytics
+  - Cloud integration support
+
+#### Cloudflare Tunnel (`cloudflared`)
+- **Image:** `cloudflare/cloudflared:latest`
+- **Network:** Service mode for optimal performance
+- **Features:**
+  - Secure remote access
+  - Automatic tunnel management
+  - DNS optimization
+
+## 📁 Project Structure
+
+```
+coder/
+├── docker-compose.yaml    # Docker Compose configuration
+├── install_coder.sh      # Automated installation script
+├── coder.service         # Systemd service file for auto-start
+├── README.md             # This file
+├── .gitignore           # Git ignore rules
+└── /data/coder/         # Data directory structure
+    ├── postgresql/       # PostgreSQL database files
+    ├── netdata/          # Netdata configuration and data
+    └── workspaces/       # Coder workspace data
+```
+
+## 🌐 Access
+
+After installation, access Coder through:
+
+- **Local access:** http://localhost:3000/
+- **Remote access:** Via Cloudflare Tunnel (configured in your tunnel settings)
+- **Monitoring:** http://localhost:19999/ (Netdata)
+- **Metrics:** http://localhost:2112/ (Prometheus)
+
+## 🔧 Management Commands
+
+### Start Services
 ```bash
-# Create backup
-docker exec coder-db pg_dump -U username coder > backup_$(date +%Y%m%d_%H%M%S).sql
+docker-compose up -d
+```
 
-# Restore backup
-docker exec -i coder-db psql -U username coder < backup_file.sql
+### Stop Services
+```bash
+docker-compose down
+```
+
+### View Logs
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f coder
+docker-compose logs -f netdata
+docker-compose logs -f cloudflared
 ```
 
 ### Update Services
 ```bash
-# Pull latest images
-docker compose pull
+docker-compose pull
+docker-compose up -d
+```
 
-# Update and restart services
-docker compose up -d --remove-orphans
+### Backup Data
+```bash
+# Backup PostgreSQL data
+docker exec coder-db pg_dump -U username coder > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Backup all data
+tar -czf coder_backup_$(date +%Y%m%d_%H%M%S).tar.gz /data/coder/
+```
+
+## 🔄 Auto-start on Boot
+
+### Systemd Service Setup
+
+For automatic startup on boot:
+
+```bash
+# Create systemd service for auto-start
+sudo cp coder.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable coder.service
+
+# Start the service
+sudo systemctl start coder.service
+
+# Check status
+sudo systemctl status coder.service
 ```
 
 ### Systemd Service Management
-If you've set up the systemd service for auto-start:
 
 ```bash
 # Check service status
@@ -226,56 +237,112 @@ sudo systemctl restart coder.service
 sudo journalctl -u coder.service -f
 ```
 
-## 📦 Version Management
-Service versions are managed in the `docker-compose.yaml` file:
-- Netdata: **v1.44.2** 
-- Coder: **v2.25.1**
-- PostgreSQL: **16.2**
+## 🛡️ Security Considerations
 
-To update versions:
-1. Edit the image tags in `docker-compose.yaml`
-2. Fetch new images:
-   ```bash
-   docker compose pull
-   ```
-3. Apply changes:
-   ```bash
-   docker compose up -d --remove-orphans
-   ```
+- **Cloudflare Tunnel:** Provides secure remote access without exposing ports
+- **File Permissions:** Enforced settings file permissions for security
+- **Volume Isolation:** Coder data is isolated in dedicated volumes
+- **Environment Variables:** Sensitive data is stored in `.env` files (excluded from version control)
+- **Docker Socket Access:** Controlled access to Docker daemon for workspace management
 
-## 🔧 Troubleshooting
+### Advanced Security Options
+
+For additional security, consider these encryption methods:
+
+#### Option 1: Docker Secrets (Production)
+```bash
+# Create encrypted secrets
+echo "your_cloudflare_token" | docker secret create cloudflare_tunnel_token -
+```
+
+#### Option 2: GPG Encryption
+```bash
+# Encrypt your .env file
+gpg -c .env
+# This creates .env.gpg (encrypted) - commit this instead
+```
+
+#### Option 3: Ansible Vault
+```bash
+# Encrypt with Ansible Vault
+ansible-vault encrypt .env
+# Use: ansible-vault decrypt .env
+```
+
+## 📚 Documentation
+
+For detailed Coder documentation, visit:
+- [Official Coder Documentation](https://coder.com/docs)
+- [API Reference](https://coder.com/docs/api)
+- [Community Forum](https://community.coder.com)
+- [Cloudflare Tunnel Documentation](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 🐛 Troubleshooting
 
 ### Common Issues
-1. **Port conflicts**: Ensure ports 3000, 19999 are available locally
-2. **Database connection**: Check PostgreSQL health
+
+1. **Port 3000 already in use:**
    ```bash
-   docker compose logs coder_database
-   ```
-3. **Permission issues**: Ensure Docker socket access
-   ```bash
-   sudo chmod 666 /var/run/docker.sock
-   ```
-4. **Cloudflare Tunnel cannot reach origin**: Ensure tunnel shares network with `coder`
-   ```bash
-   docker compose logs cloudflared
+   sudo lsof -i :3000
+   sudo kill -9 <PID>
    ```
 
-### Logs
+2. **Permission issues with data directories:**
+   ```bash
+   sudo chown -R 1000:1000 /data/coder/netdata
+   sudo chown -R 999:999 /data/coder/postgresql
+   ```
+
+3. **Docker service not running:**
+   ```bash
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   ```
+
+4. **Database connection issues:**
+   ```bash
+   docker exec coder-db pg_isready -U username -d coder
+   ```
+
+### Logs and Debugging
+
+Check service logs:
 ```bash
-# View all logs
-docker compose logs
+# Docker logs
+docker-compose logs coder
 
-# View specific service logs
-docker compose logs coder
-docker compose logs netdata
-docker compose logs cloudflared
+# Systemd logs (if using service)
+sudo journalctl -u coder.service -f
 ```
 
-### Health Checks
-```bash
-# Check service status
-docker compose ps
+## 📝 License
 
-# Check database health
-docker exec coder-db pg_isready -U username -d coder
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Thanks to the [Coder team](https://coder.com) for creating an amazing remote development platform
+- Thanks to [Cloudflare](https://cloudflare.com) for providing secure tunnel services
+- Thanks to [Netdata](https://netdata.cloud) for excellent monitoring capabilities
+- Thanks to all contributors who have helped improve this setup
+
+## 📞 Support
+
+- [GitHub Issues](https://github.com/coder/coder/issues)
+- [Coder Community Forum](https://community.coder.com)
+- [Coder Discord Server](https://discord.gg/coder)
+- [Cloudflare Support](https://support.cloudflare.com/)
+
+---
+
+Made with ❤️ by the Coder community
